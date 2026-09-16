@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title> ELECTROMECANICA| OAPAS</title>
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+  <section id="login-screen" class="login-screen">
+    <div class="login-card">
+      <div class="brand">OAPAS · ELECTROMECANICA · SIGMAT</div>
+      <h1>Control de herramientas y materiales</h1>
+      <p>Acceso administrativo</p>
+      <form id="login-form">
+        <label>Usuario</label>
+        <input id="login-user" required placeholder="admin">
+        <label>Contraseña</label>
+        <input id="login-password" type="password" required placeholder="admin123">
+        <button class="btn primary full">Iniciar sesión</button>
+      </form>
+      <p id="login-error" class="error hidden">Usuario o contraseña incorrectos.</p>
+    </div>
+  </section>
+
+  <div id="app" class="app hidden">
+    <aside class="sidebar">
+      <div class="logo-block"><strong>OAPAS</strong><span>SIGMAT</span></div>
+      <nav>
+        <button class="nav active" data-section="inicio">Inicio</button>
+        <button class="nav" data-section="inventario">Inventario</button>
+        <button class="nav" data-section="salida">Registrar salida</button>
+        <button class="nav" data-section="uso">Herramientas en uso</button>
+        <button class="nav" data-section="altabaja">Altas y bajas</button>
+        <button class="nav" data-section="movimientos">Movimientos</button>
+        <button class="nav" data-section="alertas">Alertas</button>
+        <button class="nav" data-section="usuarios">Usuarios</button>
+        <button class="nav" data-section="reportes">Reportes</button>
+        <button class="nav" data-section="config">Configuración</button>
+      </nav>
+      <button id="logout" class="logout">Cerrar sesión</button>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <small id="section-kicker">PANEL GENERAL</small>
+          <h2 id="section-title">Inicio</h2>
+          <p id="fecha"></p>
+        </div>
+        <div class="status">● ESP32 / RFID activo</div>
+      </header>
+
+      <section id="sec-inicio" class="section active-section theme-blue">
+        <div class="hero">
+          <div><small>CONTROL OPERATIVO</small><h1>Centro de gestión del almacén</h1><p>Inventario, seguridad, autorizaciones y trazabilidad.</p></div>
+          <button class="btn light" data-go="salida">Registrar salida</button>
+        </div>
+        <div class="stats">
+          <article><span>Total artículos</span><strong id="st-total">0</strong></article>
+          <article><span>En uso</span><strong id="st-use">0</strong></article>
+          <article><span>Disponibles</span><strong id="st-free">0</strong></article>
+          <article><span>Alertas pendientes</span><strong id="st-alerts">0</strong></article>
+        </div>
+        <div class="two-col">
+          <article class="card">
+            <h3>Estado del sistema</h3>
+            <div class="system-row"><span>ESP32</span><b class="ok">Conectado</b></div>
+            <div class="system-row"><span>RFID</span><b class="ok">Activo</b></div>
+            <div class="system-row"><span>Biometría</span><b class="ok">Disponible</b></div>
+            <div class="system-row"><span>Alarma</span><b class="ok">Normal</b></div>
+          </article>
+          <article class="card"><h3>Movimientos recientes</h3><div id="recent"></div></article>
+        </div>
+      </section>
+
+      <section id="sec-inventario" class="section theme-cyan">
+        <div class="banner"><div><small>INVENTARIO</small><h1>Herramientas y materiales</h1><p>Consulta disponibilidad y fichas técnicas.</p></div></div>
+        <div class="toolbar">
+          <input id="search-inv" placeholder="Buscar por código, nombre o RFID...">
+          <select id="filter-inv"><option value="todos">Todos</option><option>Disponible</option><option>En uso</option><option>Mantenimiento</option><option>Baja</option></select>
+        </div>
+        <div class="card table-wrap">
+          <table><thead><tr><th>Código</th><th>Artículo</th><th>Tipo</th><th>RFID</th><th>Estado</th><th>Ubicación</th><th>Ficha</th></tr></thead><tbody id="inv-body"></tbody></table>
+        </div>
+      </section>
+
+      <section id="sec-salida" class="section theme-teal">
+        <div class="banner"><div><small>OPERACIÓN</small><h1>Registrar salida</h1><p>Identificación, responsable y autorización.</p></div></div>
+        <div class="two-col">
+          <article class="card">
+            <form id="salida-form" class="form-grid">
+              <div class="full-row">
+                <label>Código de barras</label>
+                <div class="row"><input id="salida-code" required placeholder="Ej. MOT-001"><button type="button" id="scan-btn" class="btn secondary">Simular escaneo</button></div>
+              </div>
+              <div><label>Artículo</label><input id="salida-item" readonly></div>
+              <div><label>RFID</label><input id="salida-rfid" readonly></div>
+              <div><label>Responsable</label><input id="salida-persona" required></div>
+              <div><label>Ubicación de uso</label><input id="salida-ubicacion" required></div>
+              <div class="full-row"><label>Propósito</label><textarea id="salida-proposito" required></textarea></div>
+              <div class="full-row auth-box">
+                <div><b>Autorización del jefe</b><p>Huella digital principal; contraseña como respaldo.</p></div>
+                <button type="button" id="huella-jefe" class="btn secondary">Simular huella</button>
+              </div>
+              <div id="salida-auth" class="full-row hidden success-box"></div>
+              <div class="full-row actions"><button class="btn primary">Registrar salida</button></div>
+            </form>
+          </article>
+          <article class="card">
+            <h3>Flujo de seguridad</h3>
+            <ol class="flow"><li>Identificar artículo</li><li>Capturar responsable y destino</li><li>Autorizar con huella</li><li>Validar paso RFID</li><li>Registrar fecha y hora</li></ol>
+          </article>
+        </div>
+      </section>
+
+      <section id="sec-uso" class="section theme-green">
+        <div class="banner"><div><small>SEGUIMIENTO</small><h1>Herramientas en uso</h1><p>Artículos que se encuentran fuera del almacén.</p></div></div>
+        <div class="card table-wrap"><table><thead><tr><th>Código</th><th>Artículo</th><th>Responsable</th><th>Salida</th><th>Estado</th></tr></thead><tbody id="uso-body"></tbody></table></div>
+      </section>
+
+      <section id="sec-altabaja" class="section theme-purple">
+        <div class="banner"><div><small>CONTROL ADMINISTRATIVO</small><h1>Altas y bajas</h1><p>Las modificaciones del inventario requieren autorización del administrador.</p></div></div>
+        <div class="tabs">
+          <button class="tab active" data-tab="alta">Alta de herramienta</button>
+          <button class="tab" data-tab="baja">Baja de herramienta</button>
+          <button class="tab" data-tab="historial">Historial</button>
+        </div>
+
+        <div id="tab-alta" class="tab-content active">
+          <div class="two-col">
+            <article class="card">
+              <h3>Alta de nueva herramienta</h3>
+              <form id="alta-form" class="form-grid">
+                <div><label>Código</label><input id="alta-code" required></div>
+                <div><label>RFID</label><input id="alta-rfid" required></div>
+                <div class="full-row"><label>Nombre</label><input id="alta-name" required></div>
+                <div><label>Categoría</label><select id="alta-cat"><option>Equipo</option><option>Herramienta</option><option>Instrumento</option><option>Material</option></select></div>
+                <div><label>Ubicación</label><input id="alta-loc" value="Almacén" required></div>
+                <div><label>Tipo / tecnología</label><input id="alta-tipo"></div>
+                <div><label>Potencia / capacidad</label><input id="alta-potencia"></div>
+                <div><label>Velocidad / rango</label><input id="alta-velocidad"></div>
+                <div><label>Modelo</label><input id="alta-modelo"></div>
+                <div class="full-row"><label>Función / descripción técnica</label><textarea id="alta-funcion"></textarea></div>
+                <div class="full-row auth-box">
+                  <div><b>Autorización del administrador</b><p>Huella digital o contraseña.</p></div>
+                  <div class="row"><button type="button" id="alta-huella" class="btn secondary">Huella</button><button type="button" id="alta-pass" class="btn outline">Contraseña</button></div>
+                </div>
+                <div id="alta-auth" class="full-row hidden success-box"></div>
+                <div class="full-row actions"><button class="btn primary">Dar de alta</button></div>
+              </form>
+            </article>
+            <article class="card info"><h3>Control de alta</h3><p>El alta registra una nueva herramienta dentro del inventario oficial y conserva quién autorizó el movimiento.</p></article>
+          </div>
+        </div>
+
+        <div id="tab-baja" class="tab-content">
+          <div class="two-col">
+            <article class="card">
+              <h3>Baja de herramienta</h3>
+              <form id="baja-form" class="form-grid">
+                <div class="full-row"><label>Herramienta</label><select id="baja-item"></select></div>
+                <div class="full-row"><label>Situación / motivo</label>
+                  <select id="baja-reason" required><option value="">Seleccione...</option><option>Daño irreparable</option><option>Desgaste por vida útil</option><option>Obsolescencia tecnológica</option><option>Pérdida o extravío</option><option>Robo</option><option>Transferencia a otra área</option><option>Sustitución por equipo nuevo</option><option>Otro</option></select>
+                </div>
+                <div class="full-row"><label>Descripción detallada de la situación</label><textarea id="baja-desc" required></textarea></div>
+                <div class="full-row"><label>Observaciones / evidencia</label><textarea id="baja-evid"></textarea></div>
+                <div class="full-row auth-box danger-box">
+                  <div><b>Autorización obligatoria</b><p>La baja requiere validar al administrador.</p></div>
+                  <div class="row"><button type="button" id="baja-huella" class="btn secondary">Huella</button><button type="button" id="baja-pass" class="btn outline">Contraseña</button></div>
+                </div>
+                <div id="baja-auth" class="full-row hidden success-box"></div>
+                <div class="full-row actions"><button class="btn danger-btn">Confirmar baja</button></div>
+              </form>
+            </article>
+            <article class="card info"><h3>La baja no borra el historial</h3><p>El artículo cambia a estado “Baja” y deja de estar disponible, pero conserva su ficha, movimientos previos, motivo y autorización.</p></article>
+          </div>
+        </div>
+
+        <div id="tab-historial" class="tab-content">
+          <div class="card table-wrap"><table><thead><tr><th>Fecha</th><th>Operación</th><th>Código</th><th>Artículo</th><th>Detalle</th><th>Autorizó</th><th>Método</th></tr></thead><tbody id="ab-body"></tbody></table></div>
+        </div>
+      </section>
+
+      <section id="sec-movimientos" class="section theme-slate">
+        <div class="banner"><div><small>TRAZABILIDAD</small><h1>Historial de movimientos</h1><p>Salidas y devoluciones registradas.</p></div></div>
+        <div class="card table-wrap"><table><thead><tr><th>ID</th><th>Código</th><th>Artículo</th><th>Responsable</th><th>Autorizó</th><th>Salida</th><th>Regreso</th><th>Estado</th></tr></thead><tbody id="mov-body"></tbody></table></div>
+      </section>
+
+      <section id="sec-alertas" class="section theme-red">
+        <div class="banner"><div><small>SEGURIDAD</small><h1>Alertas</h1><p>Incidentes detectados por el sistema.</p></div></div>
+        <div class="card table-wrap"><table><thead><tr><th>Fecha</th><th>Evento</th><th>Artículo</th><th>Estado</th><th>Atendió</th><th>Acción</th></tr></thead><tbody id="alert-body"></tbody></table></div>
+      </section>
+
+      <section id="sec-usuarios" class="section theme-indigo">
+        <div class="banner"><div><small>CONTROL DE ACCESO</small><h1>Usuarios</h1><p>Administradores y jefes autorizadores.</p></div></div>
+        <div class="people">
+          <article class="person"><b>AD</b><h3>Administrador</h3><p>Control total del sistema</p><span>Huella registrada</span></article>
+          <article class="person"><b>J1</b><h3>Jefe de Área 1</h3><p>Autorización de salidas</p><span>Huella registrada</span></article>
+          <article class="person"><b>J2</b><h3>Jefe de Área 2</h3><p>Autorización de salidas</p><span>Huella registrada</span></article>
+        </div>
+      </section>
+
+      <section id="sec-reportes" class="section theme-report">
+        <div class="banner"><div><small>INDICADORES</small><h1>Reportes</h1><p>Resumen del comportamiento del almacén.</p></div></div>
+        <div class="stats"><article><span>Salidas</span><strong>18</strong></article><article><span>Devoluciones</span><strong>13</strong></article><article><span>Incidentes</span><strong>2</strong></article><article><span>Tiempo promedio</span><strong>4 h 32</strong></article></div>
+      </section>
+
+      <section id="sec-config" class="section theme-gray">
+        <div class="banner"><div><small>SISTEMA</small><h1>Configuración</h1><p>Estado de dispositivos e integraciones.</p></div></div>
+        <div class="settings"><article class="card"><h3>RFID</h3><p>Lector de identificación automática</p><span class="ok">Conectado</span></article><article class="card"><h3>Biometría</h3><p>Sensor de huella</p><span class="ok">Disponible</span></article><article class="card"><h3>Alarma</h3><p>Sirena física</p><span class="ok">Normal</span></article><article class="card"><h3>Base de datos</h3><p>PostgreSQL</p><span class="ok">Sincronizada</span></article></div>
+      </section>
+    </main>
+  </div>
+
+  <div id="modal" class="modal hidden"><div class="modal-card"><button id="modal-close" class="close">×</button><h2 id="modal-title">Detalle</h2><div id="modal-content"></div></div></div>
+  <div id="auth-modal" class="modal hidden"><div class="modal-card small"><button id="auth-close" class="close">×</button><h2>Autorización administrativa</h2><label>Usuario</label><input id="auth-user" value="admin"><label>Contraseña</label><input id="auth-password" type="password"><button id="auth-confirm" class="btn primary full">Autorizar</button></div></div>
+  <div id="toasts"></div>
+  <script src="js/app.js"></script>
+</body>
+</html>
