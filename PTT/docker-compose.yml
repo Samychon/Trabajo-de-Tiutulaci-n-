@@ -1,0 +1,52 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ipi2_user
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the project-root .env}"
+      POSTGRES_DB: ipi2_inventario
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:6379:6379"
+
+  backend:
+    build: ./backend
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: "postgresql+psycopg2://ipi2_user:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the project-root .env}@db:5432/ipi2_inventario"
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./backend:/app
+
+  # Respaldo automatico de PostgreSQL: dump periodico + retencion, en volumen separado del de datos.
+  backup:
+    image: postgres:16-alpine
+    depends_on:
+      - db
+    environment:
+      PGHOST: db
+      PGUSER: ipi2_user
+      PGPASSWORD: "${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the project-root .env}"
+      PGDATABASE: ipi2_inventario
+      BACKUP_RETENTION_DAYS: 14
+      BACKUP_INTERVAL_SECONDS: 86400
+    volumes:
+      - ./backend/backup:/scripts:ro
+      - backup_data:/backups
+    entrypoint: ["/bin/sh", "/scripts/backup.sh"]
+
+volumes:
+  db_data:
+  backup_data:
